@@ -1,0 +1,152 @@
+ 
+---
+title: Tuition Views
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true  
+    theme: cerulean
+--- 
+
+## Notes
+- Cost data from 1993-2014 comes from https://registrar.uoregon.edu/statistics/historical-tuition
+- Post 2014 undergraduate cost data: https://ir.uoregon.edu/tuition
+- Post 2014 law school cost data comes from individual 509 forms, please see https://www.abarequireddisclosures.org/Disclosure509.aspx
+- CPI Data: https://www.bls.gov/cpi/research-series/r-cpi-u-rs-home.htm
+
+```{r}
+library(rio)
+library(here)
+library(tidyverse)
+library(rematch)
+library(readxl)
+library(ggplot2)
+library(cowplot)
+
+undergrad_res_data <- str_split("2,916 3,258 3,381 3,540 3,648 3,771 3,810 3,819 4,071 4,723 5,039 5,670 5,805 5,970 6,168 6,485 7,430 8,190 8,789 9,310 9,703 9,918 10,289 10,762 11,571 11,898 12,720 13,856 14,421 15,054",pattern = " ") %>% 
+    as_vector()
+
+grad_res_data <- str_split("4,212 4,935 5,376 5,889 6,150 6,429 6,750 7,056 7,497 8,134 8,958 9,918 10,548 11,055 11,577 12,144 12,698 13,383 14,198 14,530 15,307 15,552", pattern = " ") %>% 
+    as_vector()
+
+
+law_res_data <- str_split("6,964 7,688 8,000 9,090 10,050 10,236 10,898 11,204 12,244 13,459 15,202 16,156 17,792 18,690 19,596 20,570 22,330 24,031 26,062 28,354 29,492 30,586, 31,506 32,474 33,922 35,418 35,604 39,229 40,821 42,840",pattern =  " ") %>% 
+    as_vector()
+
+law_res_data_vals <- parse_number(law_res_data)
+undergrad_res_vals <- parse_number(undergrad_res_data)
+grad_res_vals <- parse_number(grad_res_data)
+
+tuition <- tibble(law_res_tuition_raw = law_res_data_vals) %>% 
+       mutate(year = 1:30+1992,
+           grad_res_data_raw = append(grad_res_vals, rep(NA,8), after = 22),
+           undergrad_res_data_raw = undergrad_res_vals)
+
+cpi <- read_excel(here("r-cpi-u-rs-allitems.xlsx"),range = ("A6:N51")) %>% 
+    filter(YEAR <= 2022 & YEAR >= 1993)
+
+
+cpi_adj <- cpi$AVG / 2.155 #scaling to 100 at beginning of law_res_dataset.
+
+cpi_adj <- append(cpi_adj,185.1508) #repeating last cpi value for 2022 data
+tuition_adjusted <- tuition %>% 
+    mutate(cpi_adjusted = cpi_adj,
+           law_res_cpi = (law_res_tuition_raw / cpi_adj)*100,
+           grad_res_cpi = (grad_res_data_raw / cpi_adj)* 100,
+           undergrad_res_cpi = (undergrad_res_data_raw / cpi_adj) * 100) %>% 
+    pivot_longer(cols = ends_with("_cpi"),
+                 names_to = "tuition_type",
+                 values_to = "cost") %>% 
+    select(-ends_with("raw"))
+
+
+
+res_plot <- tuition_adjusted %>% 
+    ggplot(aes(x=year,y=cost))+
+    geom_line(aes(color = tuition_type))+
+    labs(title = "Resident Tuitions")+
+    ylab("Cost ($)")+
+    theme(legend.position = "none")
+
+
+```
+```{r non resident}
+undergrad_nonres_data <- str_split("9,285 10,770 11,193 11,664 12,099 12,555 13,197 13,839 14,493 16,252 16,938 17,646 18,201 18,768 19,332 20,242 23,720 25,830 27,653 28,660 29,788 30,888 32,024 33,442 34,611 35,478 36,615 39,308 40,465 41,699",pattern = " ") %>% 
+    as_vector()
+
+grad_nonres_data <- str_split("7,680 7,860 8,877 10,062 10,449 10,857 11,409 11,958 12,645 13,540 13,734 14,211 15,138 15,591 16,341 17,166 17,990 19,350 20,597 22,198 23,839 24,759", pattern = " ") %>% 
+    as_vector()
+
+
+law_nonres_data <- str_split("12,680 12,860 13,190 13,572 13,688 13,984 14,844 15,356 16,604 18,037 19,122 20,458 22,400 23,262 24,396 25,610 27,820 29,953 32,506 35,374 36,746 38,056 39,210 40,394 42,166 44,022 45,961 49,093 51,081 53,622",pattern =  " ") %>% 
+    as_vector()
+
+law_nonres_data_vals <- parse_number(law_nonres_data)
+undergrad_nonres_vals <- parse_number(undergrad_nonres_data)
+grad_nonres_vals <- parse_number(grad_nonres_data)
+
+tuition_nonres <- tibble(law_nonres_tuition_raw = law_nonres_data_vals) %>% 
+       mutate(year = 1:30+1992,
+           grad_nonres_data_raw = append(grad_nonres_vals, rep(NA,8), after = 22),
+           undergrad_nonres_data_raw = undergrad_nonres_vals)
+
+tuition_nonres_adjusted <- tuition_nonres %>% 
+    mutate(cpi_adjusted = cpi_adj,
+           law_nonres_cpi = (law_nonres_tuition_raw / cpi_adj)*100,
+           grad_nonres_cpi = (grad_nonres_data_raw / cpi_adj)* 100,
+           undergrad_nonres_cpi = (undergrad_nonres_data_raw / cpi_adj) * 100) %>% 
+    pivot_longer(cols = ends_with("_cpi"),
+                 names_to = "tuition_type",
+                 values_to = "cost") %>% 
+    select(-ends_with("raw"))
+
+
+
+nonres_plot <- tuition_nonres_adjusted %>% 
+    ggplot(aes(x=year,y=cost))+
+    geom_line(aes(color = tuition_type))+
+    labs(title = "Non-Resident Tuitions")+
+    ylab("Cost ($)")+
+    scale_color_discrete(name = "Tuition", labels = c("Graduate", "Law", "Undergraduate"))
+
+nonres_plot_nolegend <- nonres_plot +
+    theme(legend.position = "none")
+
+legend <- get_legend(
+  nonres_plot + 
+    guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom")
+)
+    
+nonres_plot
+prow <- plot_grid(res_plot,nonres_plot_nolegend)
+
+plot_grid(prow, legend, ncol = 1, rel_heights = c(1,.1))
+
+
+
+
+
+```
+```{r law res nonres comp}
+
+law_tuition <- tuition_nonres_adjusted %>% 
+    filter(tuition_type == "law_nonres_cpi")
+
+law_res_tuition <- tuition_adjusted %>% 
+    filter(tuition_type == "law_res_cpi")
+
+law_collected <- rbind(law_tuition,law_res_tuition)
+
+
+law_collected %>% 
+    ggplot(aes(x=year,y=cost))+
+    geom_line(aes(color = tuition_type))+
+    labs(title = "Comparing Resident and Non Resident Law Tuition after adjustment.")+
+    ylab("Cost ($)")+
+    scale_color_discrete(name = "Tuition", labels = c("Nonresident", "Resident"))
+
+
+```
+
