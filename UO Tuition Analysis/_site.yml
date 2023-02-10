@@ -4,6 +4,7 @@ base_url: https://errolkaylor.github.io/uo_tuition_analysis/
 description: |
   UO Tuition Analysis
 output_dir: "docs"
+theme: minima
 navbar:
   right:
     - text: "Home"
