@@ -69,7 +69,7 @@ res_plot <- tuition_adjusted %>%
     ylab("Cost ($)")+
     theme(legend.position = "none")
 
-
+res_plot
 ```
 ```{r non resident}
 undergrad_nonres_data <- str_split("9,285 10,770 11,193 11,664 12,099 12,555 13,197 13,839 14,493 16,252 16,938 17,646 18,201 18,768 19,332 20,242 23,720 25,830 27,653 28,660 29,788 30,888 32,024 33,442 34,611 35,478 36,615 39,308 40,465 41,699",pattern = " ") %>% 
@@ -122,10 +122,10 @@ legend <- get_legend(
 nonres_plot
 prow <- plot_grid(res_plot,nonres_plot_nolegend)
 
-plot_grid(prow, legend, ncol = 1, rel_heights = c(1,.1))
+p2 <- plot_grid(prow, legend, ncol = 1, rel_heights = c(1,.1))
 
 
-
+p2
 
 
 ```
@@ -140,12 +140,23 @@ law_res_tuition <- tuition_adjusted %>%
 law_collected <- rbind(law_tuition,law_res_tuition)
 
 
-law_collected %>% 
+p1 <- law_collected %>% 
     ggplot(aes(x=year,y=cost))+
     geom_line(aes(color = tuition_type))+
     labs(title = "Comparing Resident and Non Resident Law Tuition after adjustment.")+
     ylab("Cost ($)")+
     scale_color_discrete(name = "Tuition", labels = c("Nonresident", "Resident"))
+
+
+tuition_collected <- rbind(tuition_adjusted, tuition_nonres_adjusted) %>% 
+  arrange(year,tuition_type) %>% 
+  group_by(tuition_type) %>% 
+  mutate(yoy = 100 * (cost-lag(cost))/lag(cost))
+
+
+diff_sum <- tuition_collected %>% 
+  group_by(tuition_type) %>% 
+  summarise(avg_diff = mean(yoy,na.rm=TRUE))
 
 
 ```
