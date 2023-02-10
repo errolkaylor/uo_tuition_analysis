@@ -161,7 +161,6 @@ diff_sum <- tuition_collected %>%
   summarise(avg_diff = mean(yoy,na.rm=TRUE))
 
 p1
-
 ```
 
 
