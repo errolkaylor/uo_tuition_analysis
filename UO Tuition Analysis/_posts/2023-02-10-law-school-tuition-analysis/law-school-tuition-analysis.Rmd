@@ -1,21 +1,18 @@
- 
 ---
-title: Tuition Views
+title: "Law School Tuition Analysis"
+description: |
+  Preliminary Historical Law School tuition data
+author:
+  - name: Errol Kaylor
+    url: https://github.com/errolkaylor
+date: 2023-02-10
 output:
-  html_document:
-    toc: true
-    toc_depth: 4
-    toc_float: true  
-    theme: cerulean
---- 
+  distill::distill_article:
+    self_contained: false
+---
 
-## Notes
-- Cost data from 1993-2014 comes from https://registrar.uoregon.edu/statistics/historical-tuition
-- Post 2014 undergraduate cost data: https://ir.uoregon.edu/tuition
-- Post 2014 law school cost data comes from individual 509 forms, please see https://www.abarequireddisclosures.org/Disclosure509.aspx
-- CPI Data: https://www.bls.gov/cpi/research-series/r-cpi-u-rs-home.htm
 
-```{r}
+```{r setup, include=FALSE}
 library(rio)
 library(here)
 library(tidyverse)
@@ -23,6 +20,11 @@ library(rematch)
 library(readxl)
 library(ggplot2)
 library(cowplot)
+library(plotly)
+library(distill)
+```
+
+```{r echo=FALSE}
 
 undergrad_res_data <- str_split("2,916 3,258 3,381 3,540 3,648 3,771 3,810 3,819 4,071 4,723 5,039 5,670 5,805 5,970 6,168 6,485 7,430 8,190 8,789 9,310 9,703 9,918 10,289 10,762 11,571 11,898 12,720 13,856 14,421 15,054",pattern = " ") %>% 
     as_vector()
@@ -69,9 +71,12 @@ res_plot <- tuition_adjusted %>%
     ylab("Cost ($)")+
     theme(legend.position = "none")
 
-res_plot
+
+
 ```
-```{r non resident}
+
+
+```{r echo=FALSE}
 undergrad_nonres_data <- str_split("9,285 10,770 11,193 11,664 12,099 12,555 13,197 13,839 14,493 16,252 16,938 17,646 18,201 18,768 19,332 20,242 23,720 25,830 27,653 28,660 29,788 30,888 32,024 33,442 34,611 35,478 36,615 39,308 40,465 41,699",pattern = " ") %>% 
     as_vector()
 
@@ -118,19 +123,16 @@ legend <- get_legend(
     guides(color = guide_legend(nrow = 1)) +
     theme(legend.position = "bottom")
 )
-    
-nonres_plot
 prow <- plot_grid(res_plot,nonres_plot_nolegend)
 
 p2 <- plot_grid(prow, legend, ncol = 1, rel_heights = c(1,.1))
 
-
 p2
-
-
 ```
-```{r law res nonres comp}
 
+
+
+```{r echo=FALSE}
 law_tuition <- tuition_nonres_adjusted %>% 
     filter(tuition_type == "law_nonres_cpi")
 
@@ -158,6 +160,8 @@ diff_sum <- tuition_collected %>%
   group_by(tuition_type) %>% 
   summarise(avg_diff = mean(yoy,na.rm=TRUE))
 
+p1
 
 ```
+
 

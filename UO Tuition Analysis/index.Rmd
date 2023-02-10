@@ -1,0 +1,5 @@
+---
+title: "UO Tuition Analysis"
+site: distill::distill_website
+listing: posts
+---
